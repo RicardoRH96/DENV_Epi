@@ -4,7 +4,7 @@ library(tidyterra)
 libs <- c(
   "tidyverse", "terra", "tidyterra",
   "osmdata", "sf", "ggmap", "classInt",
-  "gifski"
+  "gifski", "parsedate"
 )
 
 installed_libraries <- libs %in% rownames(

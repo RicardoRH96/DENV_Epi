@@ -1,6 +1,7 @@
-Data/*
 .DS_Store
-./.DS_Store
-Data/.DS_Store
-Figures/.DS_Store
-Scripts/.DS_Store
+# macOS system files
+*/.DS_Store
+*.DS_Store
+
+Data/
+Figures/

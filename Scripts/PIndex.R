@@ -5,7 +5,7 @@ library(readr)
 library(MVSE)
 
 # Load the climate variables
-climate_vars <- read_csv('~/Documents/DENV/2024/Climate_vars/HT_Departments.csv') %>% 
+climate_vars <- read_csv('./HT_Departments.csv') %>% 
   mutate(month_date = floor_date(date, unit='month')) %>% 
   group_by(Departamento, month_date) %>% 
   summarise(meanT = mean(meanT),
@@ -59,7 +59,7 @@ library(MVSE)
 library(coda)
 
 # Load the climate variables
-climate_vars <- read_csv('~/Documents/DENV/2024/Climate_vars/HT_Departments.csv') %>% 
+climate_vars <- read_csv('./HT_Departments.csv') %>% 
   rename(H = meanH,
          T = meanT)
 
@@ -159,6 +159,6 @@ for(state in unique(climate_vars$Departamento)) {
   final_results <- rbind(final_results, temp_df)
 }
 
-write_csv(final_results, '~/Documents/DENV/2024/Climate_vars/P_index.csv')
+write_csv(final_results, './P_index.csv')
 
 # Now, `final_results` contains the mean, HPD intervals, and state names for all the states

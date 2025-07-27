@@ -8,14 +8,14 @@ library(dplyr)
 library(readr)
 
 # # Load lineage data and select relevant columns
-# lineages <- read_csv('~/Documents/DENV/2024/Metadata/D2_lineages.csv') %>%
+# lineages <- read_csv('DENV/2024/Metadata/D2_lineages.csv') %>%
 #   select(name, assignment)
 # 
 # # Clean the 'name' column by removing 'Colombia' and extracting the first 23 characters
 # lineages$name <- substr(gsub('Colombia', '', lineages$name), 1, 23)
 # 
 # # Load metadata for Dengue2
-# metadata <- read_tsv("~/Documents/DENV/2024/D2/all_colombia/subsampled_d2_metadata.csv") %>%
+# metadata <- read_tsv("DENV/2024/D2/all_colombia/subsampled_d2_metadata.csv") %>%
 #   filter(country == 'Colombia')
 # 
 # 
@@ -31,7 +31,7 @@ library(readr)
 
 #Muller plot, genotype level (note: update when lineage assignation is available)
 
-data <- read_tsv('~/Documents/DENV/2024/Metadata/colombia_serotype_genotype_08_10_2024.tsv') %>% 
+data <- read_tsv('DENV/2024/Metadata/colombia_serotype_genotype_08_10_2024.tsv') %>% 
   janitor::clean_names() %>% 
   filter(collection_date != "unknown") %>% 
   filter(nchar(collection_date) > 4) %>%
@@ -95,4 +95,4 @@ muller_plot <- muller_data %>%
   )
 
 
-ggsave('~/Documents/DENV/2024/genotype_muller_plot.jpeg', dpi = 1200, height = 4.5, width = 12, units = 'in', device = 'jpeg')
+ggsave('DENV/2024/genotype_muller_plot.jpeg', dpi = 1200, height = 4.5, width = 12, units = 'in', device = 'jpeg')

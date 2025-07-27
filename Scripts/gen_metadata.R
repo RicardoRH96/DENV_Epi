@@ -1,7 +1,7 @@
 library(tidyverse); library(janitor); library(countrycode)
 
 #Working directory
-setwd('~/Documents/DENV/2024/')
+setwd('/DENV/2024/')
 
 metadata <- read_tsv('Metadata/denv_metadata_07_12_24.tsv') |> 
   janitor::clean_names() |> 

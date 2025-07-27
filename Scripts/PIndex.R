@@ -115,7 +115,7 @@ for(state in unique(climate_vars$Departamento)) {
 
 #Test 2
 # Load the climate variables
-climate_vars <- read_csv('~/Documents/DENV/2024/Climate_vars/HT_Departments.csv') %>% 
+climate_vars <- read_csv('/DENV/2024/Climate_vars/HT_Departments.csv') %>% 
   rename(H = meanH,
          T = meanT)
 

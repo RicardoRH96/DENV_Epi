@@ -2,7 +2,7 @@
 pacman::p_load(tidyverse, purrr, MoMAColors)
 
 #set working directory
-setwd('~/Documents/DENV/E_gene/')
+setwd('/DENV/E_gene/')
 #Read metadata 
 data <- read_tsv('E_aln_D2_global_metadata.tsv') %>% 
   janitor::clean_names() %>% 

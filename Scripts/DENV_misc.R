@@ -2,7 +2,7 @@
 #Load libraries
 library(tidyverse);library(ggstream); library(colorspace); library(ggtext); library(cowplot); library(fedmatch)
 
-lineages <- read_csv('~/Documents/DENV/2024/Metadata/DENV2_Lineages.csv') %>% 
+lineages <- read_csv('~/DENV/2024/Metadata/DENV2_Lineages.csv') %>% 
   select(name, assignment)
 
 colnames(lineages)[1] <- 'accession_id'
@@ -10,7 +10,7 @@ colnames(lineages)[1] <- 'accession_id'
 theme_set(theme_classic(base_family = 'Helvetica',base_size = 14))
 
 
-dataset <- read_tsv('~/Documents/DENV/2024/Metadata/denv_metadata_07_12_24.tsv') %>% 
+dataset <- read_tsv('~/DENV/2024/Metadata/denv_metadata_07_12_24.tsv') %>% 
   janitor::clean_names()
 
 
@@ -77,10 +77,10 @@ for_geocoding <- merged_data %>%
          city.x = case_when(Yale_id != "NA" ~ city.y,
                             .default = city.x))
 
-write_csv(for_geocoding, '~/Documents/DENV/2024/Metadata/needs_geocoding.csv')
+write_csv(for_geocoding, '~/DENV/2024/Metadata/needs_geocoding.csv')
 
 #Read and geocode
-needs_geocoding <- read_csv('~/Documents/DENV/2024/Metadata/needs_geocoding.csv') %>% 
+needs_geocoding <- read_csv('~/DENV/2024/Metadata/needs_geocoding.csv') %>% 
   dplyr::select(-state.y, -city.y) %>% 
   dplyr::rename(state = state.x,
                 city = city.x,
@@ -104,7 +104,7 @@ geocoded_samples <- geocoded_samples %>%
                                .default = longitude))
 
 #write geocoded metadata
-write_csv(geocoded_samples, '~/Documents/DENV/2024/Metadata/D2_col_geocoded.csv')
+write_csv(geocoded_samples, '~/DENV/2024/Metadata/D2_col_geocoded.csv')
 
 
 #Multitype data
@@ -112,7 +112,7 @@ write_csv(geocoded_samples, '~/Documents/DENV/2024/Metadata/D2_col_geocoded.csv'
 Metadata_msbd <- geocoded_samples %>% 
   select(accession_id, country,assignment,collection_date)
 
-write_tsv(Metadata_msbd, '~/Documents/DENV/2024/D2/all_colombia/MSBD/D2_MSBD_METADATA.tsv')
+write_tsv(Metadata_msbd, '~/DENV/2024/D2/all_colombia/MSBD/D2_MSBD_METADATA.tsv')
 
 
 #Yale samples for location metadata Verity
@@ -122,7 +122,7 @@ temp <- geocoded_samples %>%
   mutate(Yale_id = str_extract(virus_name, "Yale-[A-Za-z]{2}\\d{3,5}"))
 
 #Nate's metadata
-Yale_metadata <- readxl::read_xlsx('~/Documents/DENV/2024/Metadata/Yale_samples_metadata.xlsx') %>% 
+Yale_metadata <- readxl::read_xlsx('~/DENV/2024/Metadata/Yale_samples_metadata.xlsx') %>% 
   janitor::clean_names() %>% 
   mutate(sample_id = gsub('.1','',sample_id))
 

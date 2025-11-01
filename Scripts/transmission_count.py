@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
-from typing import Iterable, List, Mapping, Sequence, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,6 +23,63 @@ DEFAULT_COLOR = "#D3D3D3"
 IMPORT_COLOR = "#22C55E"
 LOCAL_COLOR = "#e09f3e"
 EXPORT_COLOR = "#9c6ade"
+
+NORTH_COUNTRIES: Set[str] = {
+    "Mexico",
+    "Guatemala",
+    "Belize",
+    "Honduras",
+    "El Salvador",
+    "Nicaragua",
+    "Costa Rica",
+    "Panama",
+    "Jamaica",
+    "Haiti",
+    "Dominican Republic",
+    "Cuba",
+    "Puerto Rico",
+    "Bahamas",
+    "Trinidad and Tobago",
+}
+
+SOUTH_COUNTRIES: Set[str] = {
+    "Colombia",
+    "Venezuela",
+    "Ecuador",
+    "Peru",
+    "Bolivia",
+    "Brazil",
+    "Paraguay",
+    "Uruguay",
+    "Argentina",
+    "Chile",
+    "Guyana",
+    "Suriname",
+    "French Guiana",
+}
+
+
+def _north_south_transition_category(
+    origin: Optional[str],
+    destination: Optional[str],
+    target: str,
+) -> Optional[str]:
+    """
+    Map an origin/destination pair into a north/south transition category.
+    """
+    if not origin or not destination:
+        return None
+    if destination == target:
+        if origin in NORTH_COUNTRIES:
+            return "north_import"
+        if origin in SOUTH_COUNTRIES:
+            return "south_import"
+    if origin == target:
+        if destination in NORTH_COUNTRIES:
+            return "north_export"
+        if destination in SOUTH_COUNTRIES:
+            return "south_export"
+    return None
 
 
 def decimal_year_to_date(decimal_year: float) -> pd.Timestamp:
@@ -124,9 +181,28 @@ def count_spatial_transmission_linkages(
     migration_table: pd.DataFrame,
     category: str,
     location: Sequence[str] | str,
-) -> pd.Series:
+) -> pd.Series | pd.DataFrame:
     """
     Translate `countSaptialTransmissionLinkages` into Python.
+
+    Parameters
+    ----------
+    migration_table:
+        Output from ``tree_to_table``.
+    category:
+        One of ``"importation"``, ``"transmission linkage"``, ``"exportation"``,
+        or ``"north2south"``.
+    location:
+        Regions to consider. For ``"north2south"`` this must be a single focal
+        location.
+
+    Returns
+    -------
+    pandas.Series or pandas.DataFrame
+        Counts per epiweek for the requested category. When ``category`` is
+        ``"north2south"`` a DataFrame is returned with columns describing whether
+        the transition involved the focal location and a northern or southern
+        partner (imports/exports).
     """
     epiweeks = sorted(migration_table["Epiweek"].unique())
     counts = pd.Series(0, index=epiweeks, dtype=int)
@@ -152,8 +228,36 @@ def count_spatial_transmission_linkages(
         if len(locations) != 1:
             raise ValueError("`location` must contain exactly one region for exportation.")
         mask = (data["From"] == locations[0]) & (data["To"] != locations[0])
+    elif category == "north2south":
+        if len(locations) != 1:
+            raise ValueError("`location` must contain exactly one region for north2south.")
+        target = locations[0]
+        epiweek_index = pd.Index(epiweeks, name="Epiweek")
+        direction_labels = [
+            "north_import",
+            "south_import",
+            "north_export",
+            "south_export",
+        ]
+        result = pd.DataFrame(0, index=epiweek_index, columns=direction_labels, dtype=int)
+
+        direction_masks = {
+            "north_import": (data["To"] == target) & data["From"].isin(NORTH_COUNTRIES),
+            "south_import": (data["To"] == target) & data["From"].isin(SOUTH_COUNTRIES),
+            "north_export": (data["From"] == target) & data["To"].isin(NORTH_COUNTRIES),
+            "south_export": (data["From"] == target) & data["To"].isin(SOUTH_COUNTRIES),
+        }
+
+        for label, label_mask in direction_masks.items():
+            grouped = data.loc[label_mask].groupby("Epiweek").size()
+            if not grouped.empty:
+                result.loc[grouped.index, label] = grouped.astype(int)
+
+        return result
     else:
-        raise ValueError("`category` must be importation, transmission linkage, or exportation.")
+        raise ValueError(
+            "`category` must be importation, transmission linkage, exportation, or north2south."
+        )
 
     filtered = data.loc[mask]
     if filtered.empty:
@@ -342,6 +446,50 @@ def build_branch_color_lookup(
     return colors
 
 
+def north_south_descendant_sequences(
+    tree_path: str | Path,
+    trait: str,
+    target: str,
+    *,
+    absolute_time: bool = True,
+    sort_branches: bool = True,
+) -> pd.Series:
+    """
+    Count unique descendant tips for north/south transitions involving ``target``.
+
+    Each qualifying transition contributes all descendant tip names beneath the
+    branch where it occurs. Tips are only counted once per category.
+    """
+    tree = bt.loadNexus(
+        str(tree_path),
+        absoluteTime=absolute_time,
+        sortBranches=sort_branches,
+    )
+
+    tip_sets: Dict[str, Set[str]] = {
+        "north_import": set(),
+        "south_import": set(),
+        "north_export": set(),
+        "south_export": set(),
+    }
+
+    for branch in tree.Objects:
+        parent = branch.parent
+        if parent is None:
+            continue
+        origin = parent.traits.get(trait) if parent.traits else None
+        destination = branch.traits.get(trait) if branch.traits else None
+        category = _north_south_transition_category(origin, destination, target)
+        if category is None:
+            continue
+        for tip_name in getattr(branch, "leaves", []):
+            if tip_name:
+                tip_sets[category].add(tip_name)
+
+    counts = {key: len(value) for key, value in tip_sets.items()}
+    return pd.Series(counts, name="descendant_tips")
+
+
 __all__ = [
     "DEFAULT_COLOR",
     "tree_to_table",
@@ -352,4 +500,7 @@ __all__ = [
     "build_branch_color_lookup",
     "decimal_year_to_date",
     "epiweek_to_date",
+    "NORTH_COUNTRIES",
+    "SOUTH_COUNTRIES",
+    "north_south_descendant_sequences",
 ]

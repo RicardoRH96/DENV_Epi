@@ -28,3 +28,7 @@ Scripts/__pycache__/transmission_count.cpython-313.pyc
 Scripts/baltic.py
 Scripts/json_to_nexus.py
 transmissionCount.py
+*.pyc
+colombia_removal_yield_summary.csv
+north_south_counts_beast.csv
+north_south_counts_full.csv

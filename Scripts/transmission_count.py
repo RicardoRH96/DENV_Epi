@@ -40,6 +40,7 @@ NORTH_COUNTRIES: Set[str] = {
     "Puerto Rico",
     "Bahamas",
     "Trinidad and Tobago",
+    "USA",
 }
 
 SOUTH_COUNTRIES: Set[str] = {
@@ -67,17 +68,30 @@ def _north_south_transition_category(
     """
     Map an origin/destination pair into a north/south transition category.
     """
+    def _normalize(value: Optional[str]) -> Optional[str]:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    origin = _normalize(origin)
+    destination = _normalize(destination)
+    target = target.strip()
+
     if not origin or not destination:
         return None
+
+    if origin == target and destination == target:
+        return None
+
     if destination == target:
-        if origin in NORTH_COUNTRIES:
+        if origin != target and origin in NORTH_COUNTRIES:
             return "north_import"
-        if origin in SOUTH_COUNTRIES:
+        if origin != target and origin in SOUTH_COUNTRIES:
             return "south_import"
     if origin == target:
-        if destination in NORTH_COUNTRIES:
+        if destination != target and destination in NORTH_COUNTRIES:
             return "north_export"
-        if destination in SOUTH_COUNTRIES:
+        if destination != target and destination in SOUTH_COUNTRIES:
             return "south_export"
     return None
 
@@ -241,14 +255,16 @@ def count_spatial_transmission_linkages(
         ]
         result = pd.DataFrame(0, index=epiweek_index, columns=direction_labels, dtype=int)
 
-        direction_masks = {
-            "north_import": (data["To"] == target) & data["From"].isin(NORTH_COUNTRIES),
-            "south_import": (data["To"] == target) & data["From"].isin(SOUTH_COUNTRIES),
-            "north_export": (data["From"] == target) & data["To"].isin(NORTH_COUNTRIES),
-            "south_export": (data["From"] == target) & data["To"].isin(SOUTH_COUNTRIES),
-        }
+        category_series = pd.Series(
+            (
+                _north_south_transition_category(origin, destination, target)
+                for origin, destination in zip(data["From"], data["To"])
+            ),
+            index=data.index,
+        )
 
-        for label, label_mask in direction_masks.items():
+        for label in direction_labels:
+            label_mask = category_series == label
             grouped = data.loc[label_mask].groupby("Epiweek").size()
             if not grouped.empty:
                 result.loc[grouped.index, label] = grouped.astype(int)
